@@ -1,14 +1,19 @@
 #include(GenerateExportHeader)
 
 macro(add_compilation_test)
-	cmake_parse_arguments(COMP_TEST "" "NAME;MAIN" "" ${ARGN})
+	cmake_parse_arguments(COMP_TEST "" "NAME;MAIN;FAIL" "" ${ARGN})
 	add_library("${COMP_TEST_NAME}_${COMP_TEST_MAIN}" OBJECT EXCLUDE_FROM_ALL
 		"${COMP_TEST_NAME}/impl.cpp"
 		"${COMP_TEST_NAME}/${COMP_TEST_MAIN}.cpp"
 	)
 	target_link_libraries("${COMP_TEST_NAME}_${COMP_TEST_MAIN}" PRIVATE pimpl)
+	if (DEFINED COMP_TEST_FAIL)
+		set(COMP_TEST_EXPECTED "fails")
+	else()
+		set(COMP_TEST_EXPECTED "compiles")
+	endif()
 	add_test(
-		NAME "test_${COMP_TEST_NAME}_${COMP_TEST_MAIN}"
+		NAME "${COMP_TEST_EXPECTED}_${COMP_TEST_NAME}_${COMP_TEST_MAIN}"
 		COMMAND "${CMAKE_COMMAND}"
 			--build .
 			--clean-first
@@ -16,11 +21,13 @@ macro(add_compilation_test)
 			--config "$<CONFIGURATION>"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 	)
-#set_tests_properties("test_${COMP_TEST_NAME}_${COMP_TEST_MAIN}"
-#	PROPERTIES
-#		WILL_FAIL TRUE
-#		PASS_REGULAR_EXPRESSION "foo failed"
-#)
+	if (DEFINED COMP_TEST_FAIL)
+	set_tests_properties("${COMP_TEST_EXPECTED}_${COMP_TEST_NAME}_${COMP_TEST_MAIN}"
+		PROPERTIES
+			WILL_FAIL TRUE
+			PASS_REGULAR_EXPRESSION "${COMP_TEST_FAIL}"
+	)
+	endif()
 endmacro()
 
 macro(add_runtime_test)
@@ -31,7 +38,7 @@ macro(add_runtime_test)
 	)
 	target_link_libraries("${COMP_TEST_NAME}_${COMP_TEST_MAIN}" PRIVATE pimpl)
 	add_test(
-		NAME "${COMP_TEST_NAME}_${COMP_TEST_MAIN}_runs"
+		NAME "runs_${COMP_TEST_NAME}_${COMP_TEST_MAIN}"
 		COMMAND "${COMP_TEST_NAME}_${COMP_TEST_MAIN}"
 	)
 endmacro()
@@ -40,7 +47,7 @@ add_runtime_test(NAME def_constructable MAIN is_constructable)
 
 add_runtime_test(NAME no_features MAIN is_destructable)
 add_runtime_test(NAME no_features MAIN is_moveable)
-add_compilation_test(NAME no_features MAIN not_def_constructible)
+add_compilation_test(NAME no_features MAIN not_def_constructible FAIL "attempting to reference a deleted function")
 
 add_compilation_test(NAME no_instantiations MAIN is_compiling)
 
