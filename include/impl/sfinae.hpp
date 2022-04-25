@@ -2,16 +2,16 @@
 
 namespace sfinae
 {
-	enum class Enabled {};
+	enum class enabled {};
 
-	enum class Disabled {};
+	enum class disabled {};
 
 	template <bool predicate>
 	constexpr auto when()
 	{
 		if constexpr (predicate)
-			return Enabled{};
+			return enabled{};
 		else
-			return Disabled{};
+			return disabled{};
 	}
 }

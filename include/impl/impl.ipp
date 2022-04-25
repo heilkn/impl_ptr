@@ -26,8 +26,8 @@ constexpr Feature features()
 }
 
 
-template <typename Impl, Feature f>
-Impl* helper(Operation op, Impl* impl)
+template <Feature f, typename Impl>
+Impl* factory(Operation op, Impl* impl)
 {
 	static_assert(!is_default_constructible(f) || std::is_default_constructible_v<Impl>,
 		"ptr was declared to be default constructible, but Impl is not.");
@@ -58,7 +58,7 @@ Impl* helper(Operation op, Impl* impl)
 template <typename Impl, Feature f, typename ...Args>
 ptr<Impl, f> make_ptr(Args&& ...args)
 {
-	return { helper<Impl, f>, new Impl(std::forward<Args>(args)...) };
+	return { new Impl(std::forward<Args>(args)...) };
 }
 
 }
